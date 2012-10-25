@@ -13,6 +13,8 @@ import MySQLdb
 import PyRSS2Gen
 import sys
 
+START_TIME = datetime.now()
+
 CONFIG = SafeConfigParser()
 CONFIG.read('newspeak.cfg')
 
@@ -70,8 +72,9 @@ def insert_item_into_db(link, feed_id, title, description, updated_parsed,
                     convert_unicode_to_html(description)[0:1000],
                     datetime.fromtimestamp(mktime(updated_parsed))))
 
-CURSOR.execute('''SELECT id, uri, filter, format FROM feeds
-        WHERE active = '1' ''')
+CURSOR.execute('''SELECT id, uri, filter, format, description FROM feeds
+        WHERE active = '1'
+        ORDER BY description, id''')
 FEEDS = CURSOR.fetchall()
 
 for feed in FEEDS:
@@ -123,3 +126,45 @@ PUBLISHED_FEED.write_xml(open(CONFIG.get('files', 'rss'), "w"))
 
 CURSOR.close()
 CONN.close()
+
+HTML_FILE = CONFIG.get('files', 'html')
+if HTML_FILE:
+    with open(HTML_FILE, 'w') as f:
+        TITLE = convert_unicode_to_html(CONFIG.get('rss', 'title'))
+        MY_LINK = convert_unicode_to_html(CONFIG.get('rss', 'link'))
+        MY_DESC = convert_unicode_to_html(CONFIG.get('rss', 'description'))
+        f.write('''
+<!DOCTYPE html><html><head>
+<title>'''+TITLE+''' - Aggregated RSS feed</title>
+<link rel="alternate" href="'''+MY_LINK+'" title="'+TITLE+'''" type="application/rss+xml"/>
+<style type="text/css">
+  body { font-family: Georgia; font-size: 16px; margin-left: 60px; }
+  h1 { margin-bottom: 2px; }
+  a { text-decoration: none; }
+  p.slogan { margin-top: 0; }
+</style>
+</head><body>
+<h1>'''+TITLE+'''</h1>
+<p class="slogan">Aggregated RSS feed</p>
+<p>'''+MY_DESC+'''</p>
+<p><a href="'''+MY_LINK+'''">RSS feed</a>
+based on '''+str(len(FEEDS))+''' sources:</p>
+<table>
+<thead><tr><th>uri</th><th>description</th></tr></thead>
+<tbody>''')
+        for feed in FEEDS:
+            LINK = convert_unicode_to_html(feed[1])
+            DESCRIPTION = convert_unicode_to_html(feed[4])
+            f.write('''<tr>
+<td><a href="'''+LINK+'">'+LINK+'</a></td><td>'+DESCRIPTION)
+            if feed[2] == '2':
+                f.write(' *')
+            f.write('</td></tr>')
+        f.write('''</tbody></table>
+<p>* Filtered by the following keywords:</p><ul>''')
+        for key in KEYWORDS:
+            f.write('<li>'+key+'</li>')
+        f.write('''</ul>
+<p>Last scrape: '''+START_TIME.strftime("%Y-%m-%d %H:%M")+'''</p>
+<footer>Powered by <a href="https://github.com/rejozenger/newspeak">newspeak</a>
+</footer></body></html>''')
