@@ -170,5 +170,5 @@ based on '''+str(len(FEEDS))+''' sources:</p>
             f.write('<li>'+key+'</li>')
         f.write('''</ul>
 <p>Last check: '''+START_TIME.strftime("%Y-%m-%d %H:%M")+'''</p>
-<footer>Powered by <a href="https://github.com/rejozenger/newspeak">newspeak</a>
+<footer>Powered by <a href="https://github.com/timkuijsten/newspeak">newspeak</a>.
 </footer></body></html>''')
