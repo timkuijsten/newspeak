@@ -46,8 +46,12 @@ def convert_unicode_to_html(string):
 def does_match_keyword(item):
     """Return TRUE if the string contains any of the given keywords."""
     for key in KEYWORDS:
-        if key in item['title'].lower() or key in item['description'].lower():
+        if hasattr(item, 'title'):
+          if key in item['title'].lower():
             return True
+        if hasattr(item, 'description'):
+           if key in item['description'].lower():
+             return True
     return False
 
 def is_existing_item(link):
@@ -165,6 +169,6 @@ based on '''+str(len(FEEDS))+''' sources:</p>
         for key in KEYWORDS:
             f.write('<li>'+key+'</li>')
         f.write('''</ul>
-<p>Last scrape: '''+START_TIME.strftime("%Y-%m-%d %H:%M")+'''</p>
+<p>Last check: '''+START_TIME.strftime("%Y-%m-%d %H:%M")+'''</p>
 <footer>Powered by <a href="https://github.com/rejozenger/newspeak">newspeak</a>
 </footer></body></html>''')
